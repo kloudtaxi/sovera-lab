@@ -15,7 +15,7 @@ services:
       - .env
       - .env.docker
     environment:
-      BACKEND_CORS_ORIGINS: '["http://localhost", "http://localhost:8000"]'
+      BACKEND_CORS_ORIGINS: '["http://localhost", "http://localhost:8000", "http://localhost:3000", "http://llama-app-web-assets-local.s3-website.localhost.localstack.cloud:4566"]'
 
   db:
     image: ankane/pgvector:v0.5.0
