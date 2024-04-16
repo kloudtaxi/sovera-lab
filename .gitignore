@@ -359,3 +359,7 @@ poetry.toml
 pyrightconfig.json
 
 # End of https://www.toptal.com/developers/gitignore/api/macos,node,python,git
+
+### Turbo ###
+# Turborepo task cache
+.turbo
