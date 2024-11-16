@@ -1,0 +1,366 @@
+openapi: 3.0.3
+info:
+  title: Sales RAG Retrieval API
+  description: Advanced retrieval patterns for sales intelligence
+  version: 1.0.0
+servers:
+  - url: http://localhost:8000
+    description: Local development server
+
+components:
+  schemas:
+    # Base Types
+    UUID:
+      type: string
+      format: uuid
+      example: "123e4567-e89b-12d3-a456-426614174000"
+
+    Timestamp:
+      type: string
+      format: date-time
+      example: "2024-01-01T12:00:00Z"
+
+    InteractionType:
+      type: string
+      enum:
+        - call
+        - email
+        - meeting
+        - demo
+
+    Sentiment:
+      type: string
+      enum:
+        - positive
+        - neutral
+        - negative
+
+    # Complex Types
+    ConversationTurn:
+      type: object
+      required:
+        - speaker
+        - content
+        - timestamp
+      properties:
+        speaker:
+          type: string
+          enum: [sales_person, customer]
+        content:
+          type: string
+        timestamp:
+          $ref: '#/components/schemas/Timestamp'
+        sentiment:
+          $ref: '#/components/schemas/Sentiment'
+
+    SalesPattern:
+      type: object
+      required:
+        - pattern_type
+        - frequency
+        - avg_success_rate
+        - example_interactions
+      properties:
+        pattern_type:
+          type: string
+        frequency:
+          type: integer
+          minimum: 1
+        avg_success_rate:
+          type: number
+          format: float
+          minimum: 0
+          maximum: 1
+        example_interactions:
+          type: array
+          items:
+            type: object
+            properties:
+              notes:
+                type: string
+              topics:
+                type: array
+                items:
+                  type: string
+              sentiment:
+                $ref: '#/components/schemas/Sentiment'
+
+    ObjectionResponse:
+      type: object
+      required:
+        - objection_type
+        - successful_responses
+        - success_rate
+        - recommended_approach
+      properties:
+        objection_type:
+          type: string
+        successful_responses:
+          type: array
+          items:
+            type: object
+            properties:
+              response:
+                type: string
+              next_steps:
+                type: string
+              sentiment:
+                $ref: '#/components/schemas/Sentiment'
+        success_rate:
+          type: number
+          format: float
+          minimum: 0
+          maximum: 1
+        recommended_approach:
+          type: string
+
+    CompetitorMention:
+      type: object
+      required:
+        - competitor_name
+        - mention_count
+        - context
+        - sentiment_distribution
+      properties:
+        competitor_name:
+          type: string
+        mention_count:
+          type: integer
+          minimum: 1
+        context:
+          type: array
+          items:
+            type: object
+            properties:
+              content:
+                type: string
+              sentiment:
+                $ref: '#/components/schemas/Sentiment'
+              date:
+                $ref: '#/components/schemas/Timestamp'
+        sentiment_distribution:
+          type: object
+          additionalProperties:
+            type: number
+            format: float
+            minimum: 0
+            maximum: 100
+
+    SalesSuggestions:
+      type: object
+      required:
+        - next_steps
+        - talking_points
+        - risk_factors
+        - recommended_content
+      properties:
+        next_steps:
+          type: array
+          items:
+            type: string
+        talking_points:
+          type: array
+          items:
+            type: string
+        risk_factors:
+          type: array
+          items:
+            type: string
+        recommended_content:
+          type: array
+          items:
+            type: string
+
+  # Common Parameters
+  parameters:
+    CustomerIdParam:
+      name: customer_id
+      in: path
+      required: true
+      schema:
+        $ref: '#/components/schemas/UUID'
+      description: UUID of the customer
+
+    OpportunityIdParam:
+      name: opportunity_id
+      in: path
+      required: true
+      schema:
+        $ref: '#/components/schemas/UUID'
+      description: UUID of the opportunity
+
+    DaysParam:
+      name: days
+      in: query
+      required: false
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 365
+        default: 30
+      description: Number of days to analyze
+
+paths:
+  /retrieval/conversation-history/{customer_id}:
+    get:
+      summary: Retrieve conversation history
+      description: Get chronological interaction history with sentiment analysis
+      parameters:
+        - $ref: '#/components/parameters/CustomerIdParam'
+        - $ref: '#/components/parameters/DaysParam'
+        - name: interaction_types
+          in: query
+          required: false
+          schema:
+            type: array
+            items:
+              $ref: '#/components/schemas/InteractionType'
+      responses:
+        '200':
+          description: Successful retrieval of conversation history
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ConversationTurn'
+        '404':
+          description: Customer not found
+        '500':
+          description: Internal server error
+
+  /retrieval/successful-patterns/{industry}:
+    get:
+      summary: Get successful sales patterns
+      description: Identify successful patterns for specific industry
+      parameters:
+        - name: industry
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: min_success_rate
+          in: query
+          required: false
+          schema:
+            type: number
+            format: float
+            minimum: 0
+            maximum: 1
+            default: 0.6
+        - $ref: '#/components/parameters/DaysParam'
+      responses:
+        '200':
+          description: Successful retrieval of sales patterns
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/SalesPattern'
+        '500':
+          description: Internal server error
+
+  /retrieval/objection-handling/{objection_type}:
+    get:
+      summary: Get objection handling suggestions
+      description: Retrieve successful responses to common sales objections
+      parameters:
+        - name: objection_type
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Type of objection (e.g., pricing, timeline, technical)
+      responses:
+        '200':
+          description: Successful retrieval of objection handling data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ObjectionResponse'
+        '404':
+          description: No data found for objection type
+        '500':
+          description: Internal server error
+
+  /retrieval/competitor-analysis/{customer_id}:
+    get:
+      summary: Analyze competitor mentions
+      description: Analyze competitor mentions in customer interactions
+      parameters:
+        - $ref: '#/components/parameters/CustomerIdParam'
+        - $ref: '#/components/parameters/DaysParam'
+        - name: min_mentions
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            default: 2
+          description: Minimum mentions threshold
+      responses:
+        '200':
+          description: Successful retrieval of competitor analysis
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/CompetitorMention'
+        '404':
+          description: Customer not found
+        '500':
+          description: Internal server error
+
+  /retrieval/sales-suggestions/{opportunity_id}:
+    get:
+      summary: Get sales suggestions
+      description: Get AI-powered sales suggestions based on opportunity context
+      parameters:
+        - $ref: '#/components/parameters/OpportunityIdParam'
+      responses:
+        '200':
+          description: Successful retrieval of sales suggestions
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SalesSuggestions'
+        '404':
+          description: Opportunity not found
+        '500':
+          description: Internal server error
+
+  # Example Error Responses
+  components:
+    responses:
+      NotFound:
+        description: The specified resource was not found
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                detail:
+                  type: string
+                  example: "Resource not found"
+
+      ServerError:
+        description: Internal server error occurred
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                detail:
+                  type: string
+                  example: "Internal server error"
+
+    securitySchemes:
+      BearerAuth:
+        type: http
+        scheme: bearer
+        bearerFormat: JWT
+
+security:
+  - BearerAuth: []
