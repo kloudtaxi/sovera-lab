@@ -1,0 +1,7 @@
+asyncpg
+numpy
+sentence-transformers
+tqdm
+python-dotenv
+pandas
+faker

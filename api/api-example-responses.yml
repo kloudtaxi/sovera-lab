@@ -1,0 +1,307 @@
+openapi: 3.0.3
+# ... (previous schema definitions remain the same)
+
+paths:
+  /retrieval/conversation-history/{customer_id}:
+    get:
+      # ... (previous definitions remain the same)
+      examples:
+        success:
+          summary: Successful conversation history retrieval
+          value:
+            request:
+              url: "/retrieval/conversation-history/123e4567-e89b-12d3-a456-426614174000"
+              method: "GET"
+              params:
+                days: 30
+                interaction_types: ["call", "meeting"]
+            response:
+              status: 200
+              body: [
+                {
+                  "speaker": "sales_person",
+                  "content": "I noticed you've been exploring our cloud migration solutions. What specific challenges are you looking to address?",
+                  "timestamp": "2024-02-15T14:30:00Z",
+                  "sentiment": "neutral"
+                },
+                {
+                  "speaker": "customer",
+                  "content": "Yes, we're particularly concerned about minimizing downtime during the transition. Our current system handles critical operations.",
+                  "timestamp": "2024-02-15T14:31:00Z",
+                  "sentiment": "negative"
+                },
+                {
+                  "speaker": "sales_person",
+                  "content": "I understand your concern about downtime. Let me walk you through our zero-downtime migration approach that we've successfully implemented with similar businesses.",
+                  "timestamp": "2024-02-15T14:32:00Z",
+                  "sentiment": "positive"
+                }
+              ]
+        not_found:
+          summary: Customer not found
+          value:
+            request:
+              url: "/retrieval/conversation-history/invalid-uuid"
+              method: "GET"
+            response:
+              status: 404
+              body: {
+                "detail": "Customer not found"
+              }
+
+  /retrieval/successful-patterns/{industry}:
+    get:
+      # ... (previous definitions remain the same)
+      examples:
+        success:
+          summary: Successful patterns for technology industry
+          value:
+            request:
+              url: "/retrieval/successful-patterns/technology"
+              method: "GET"
+              params:
+                min_success_rate: 0.7
+                days: 90
+            response:
+              status: 200
+              body: [
+                {
+                  "pattern_type": "solution_demonstration",
+                  "frequency": 45,
+                  "avg_success_rate": 0.75,
+                  "example_interactions": [
+                    {
+                      "notes": "Conducted interactive demo focusing on client's specific use case - data migration scenario",
+                      "topics": ["technical", "implementation", "security"],
+                      "sentiment": "positive"
+                    },
+                    {
+                      "notes": "Follow-up demo addressing specific security concerns with compliance team",
+                      "topics": ["security", "compliance", "technical"],
+                      "sentiment": "positive"
+                    }
+                  ]
+                },
+                {
+                  "pattern_type": "technical_deep_dive",
+                  "frequency": 38,
+                  "avg_success_rate": 0.82,
+                  "example_interactions": [
+                    {
+                      "notes": "Technical architecture review with client's engineering team",
+                      "topics": ["architecture", "scalability", "integration"],
+                      "sentiment": "positive"
+                    }
+                  ]
+                }
+              ]
+
+  /retrieval/objection-handling/{objection_type}:
+    get:
+      # ... (previous definitions remain the same)
+      examples:
+        success:
+          summary: Successful objection handling retrieval
+          value:
+            request:
+              url: "/retrieval/objection-handling/pricing"
+              method: "GET"
+            response:
+              status: 200
+              body: {
+                "objection_type": "pricing",
+                "successful_responses": [
+                  {
+                    "response": "Let's break down the ROI. Based on your current spending of $X on manual processes, our solution would reduce costs by 40% within the first year.",
+                    "next_steps": "Schedule ROI review meeting with finance team",
+                    "sentiment": "positive"
+                  },
+                  {
+                    "response": "We offer flexible payment terms and can structure the contract to align with your budget cycles.",
+                    "next_steps": "Share payment plan options document",
+                    "sentiment": "positive"
+                  }
+                ],
+                "success_rate": 0.78,
+                "recommended_approach": "Focus on value-based selling with concrete ROI examples"
+              }
+
+  /retrieval/competitor-analysis/{customer_id}:
+    get:
+      # ... (previous definitions remain the same)
+      examples:
+        success:
+          summary: Successful competitor analysis
+          value:
+            request:
+              url: "/retrieval/competitor-analysis/123e4567-e89b-12d3-a456-426614174000"
+              method: "GET"
+              params:
+                days: 90
+                min_mentions: 2
+            response:
+              status: 200
+              body: [
+                {
+                  "competitor_name": "CompetitorA",
+                  "mention_count": 5,
+                  "context": [
+                    {
+                      "content": "Client mentioned CompetitorA's pricing is 20% lower but lacks key security features",
+                      "sentiment": "positive",
+                      "date": "2024-02-10T15:20:00Z"
+                    },
+                    {
+                      "content": "Previous experience with CompetitorA's support was unsatisfactory",
+                      "sentiment": "negative",
+                      "date": "2024-01-15T09:45:00Z"
+                    }
+                  ],
+                  "sentiment_distribution": {
+                    "positive": 20.0,
+                    "neutral": 40.0,
+                    "negative": 40.0
+                  }
+                }
+              ]
+
+  /retrieval/sales-suggestions/{opportunity_id}:
+    get:
+      # ... (previous definitions remain the same)
+      examples:
+        success:
+          summary: Successful sales suggestions retrieval
+          value:
+            request:
+              url: "/retrieval/sales-suggestions/123e4567-e89b-12d3-a456-426614174000"
+              method: "GET"
+            response:
+              status: 200
+              body: {
+                "next_steps": [
+                  "Schedule technical deep-dive with engineering team",
+                  "Prepare custom ROI analysis based on provided metrics",
+                  "Set up executive sponsor meeting"
+                ],
+                "talking_points": [
+                  "Zero-downtime migration approach",
+                  "Enhanced security features vs. CompetitorA",
+                  "Flexible payment terms available"
+                ],
+                "risk_factors": [
+                  "Budget approval pending",
+                  "Technical team has concerns about integration timeline",
+                  "CompetitorA offering aggressive pricing"
+                ],
+                "recommended_content": [
+                  "Case study: Similar implementation in finance sector",
+                  "Technical architecture whitepaper",
+                  "Security compliance documentation"
+                ]
+              }
+        not_found:
+          summary: Opportunity not found
+          value:
+            request:
+              url: "/retrieval/sales-suggestions/invalid-uuid"
+              method: "GET"
+            response:
+              status: 404
+              body: {
+                "detail": "Opportunity not found"
+              }
+
+# Example error responses
+  components:
+    examples:
+      ValidationError:
+        summary: Invalid parameter value
+        value:
+          status: 422
+          body: {
+            "detail": [
+              {
+                "loc": ["query", "days"],
+                "msg": "ensure this value is less than or equal to 365",
+                "type": "value_error.number.not_le"
+              }
+            ]
+          }
+
+      AuthenticationError:
+        summary: Invalid or missing authentication
+        value:
+          status: 401
+          body: {
+            "detail": "Invalid authentication credentials"
+          }
+
+      ServerError:
+        summary: Internal server error
+        value:
+          status: 500
+          body: {
+            "detail": "An unexpected error occurred"
+          }
+
+# Example request/response for bulk operations
+  /retrieval/bulk-analysis:
+    post:
+      summary: Perform bulk analysis
+      examples:
+        success:
+          summary: Successful bulk analysis
+          value:
+            request:
+              url: "/retrieval/bulk-analysis"
+              method: "POST"
+              body: {
+                "customer_ids": [
+                  "123e4567-e89b-12d3-a456-426614174000",
+                  "987fdebc-a45b-12d3-a456-426614174000"
+                ],
+                "analysis_types": ["conversation", "competitor"],
+                "date_range": {
+                  "start": "2024-01-01T00:00:00Z",
+                  "end": "2024-03-01T00:00:00Z"
+                }
+              }
+            response:
+              status: 200
+              body: {
+                "analysis_results": [
+                  {
+                    "customer_id": "123e4567-e89b-12d3-a456-426614174000",
+                    "conversation_analysis": {
+                      "total_interactions": 15,
+                      "sentiment_trend": "improving",
+                      "key_topics": ["pricing", "security", "implementation"]
+                    },
+                    "competitor_analysis": {
+                      "mentions": 8,
+                      "primary_competitor": "CompetitorA",
+                      "sentiment_summary": "mostly_negative"
+                    }
+                  },
+                  {
+                    "customer_id": "987fdebc-a45b-12d3-a456-426614174000",
+                    "conversation_analysis": {
+                      "total_interactions": 12,
+                      "sentiment_trend": "stable",
+                      "key_topics": ["technical", "support", "training"]
+                    },
+                    "competitor_analysis": {
+                      "mentions": 3,
+                      "primary_competitor": "CompetitorB",
+                      "sentiment_summary": "neutral"
+                    }
+                  }
+                ],
+                "analysis_summary": {
+                  "processed_customers": 2,
+                  "total_interactions": 27,
+                  "common_topics": ["technical", "pricing"],
+                  "completion_time": "2024-03-10T15:30:00Z"
+                }
+              }
+

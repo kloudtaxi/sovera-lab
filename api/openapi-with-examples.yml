@@ -1,0 +1,607 @@
+openapi: 3.0.3
+info:
+  title: Sales RAG Retrieval API
+  description: Advanced retrieval patterns for sales intelligence
+  version: 1.0.0
+servers:
+  - url: http://localhost:8000
+    description: Local development server
+
+components:
+  schemas:
+    # Base Types
+    UUID:
+      type: string
+      format: uuid
+      example: "123e4567-e89b-12d3-a456-426614174000"
+
+    Timestamp:
+      type: string
+      format: date-time
+      example: "2024-01-01T12:00:00Z"
+
+    InteractionType:
+      type: string
+      enum:
+        - call
+        - email
+        - meeting
+        - demo
+
+    Sentiment:
+      type: string
+      enum:
+        - positive
+        - neutral
+        - negative
+
+    # Complex Types
+    ConversationTurn:
+      type: object
+      required:
+        - speaker
+        - content
+        - timestamp
+      properties:
+        speaker:
+          type: string
+          enum: [sales_person, customer]
+        content:
+          type: string
+        timestamp:
+          $ref: '#/components/schemas/Timestamp'
+        sentiment:
+          $ref: '#/components/schemas/Sentiment'
+
+    SalesPattern:
+      type: object
+      required:
+        - pattern_type
+        - frequency
+        - avg_success_rate
+        - example_interactions
+      properties:
+        pattern_type:
+          type: string
+        frequency:
+          type: integer
+          minimum: 1
+        avg_success_rate:
+          type: number
+          format: float
+          minimum: 0
+          maximum: 1
+        example_interactions:
+          type: array
+          items:
+            type: object
+            properties:
+              notes:
+                type: string
+              topics:
+                type: array
+                items:
+                  type: string
+              sentiment:
+                $ref: '#/components/schemas/Sentiment'
+
+    ObjectionResponse:
+      type: object
+      required:
+        - objection_type
+        - successful_responses
+        - success_rate
+        - recommended_approach
+      properties:
+        objection_type:
+          type: string
+        successful_responses:
+          type: array
+          items:
+            type: object
+            properties:
+              response:
+                type: string
+              next_steps:
+                type: string
+              sentiment:
+                $ref: '#/components/schemas/Sentiment'
+        success_rate:
+          type: number
+          format: float
+          minimum: 0
+          maximum: 1
+        recommended_approach:
+          type: string
+
+    CompetitorMention:
+      type: object
+      required:
+        - competitor_name
+        - mention_count
+        - context
+        - sentiment_distribution
+      properties:
+        competitor_name:
+          type: string
+        mention_count:
+          type: integer
+          minimum: 1
+        context:
+          type: array
+          items:
+            type: object
+            properties:
+              content:
+                type: string
+              sentiment:
+                $ref: '#/components/schemas/Sentiment'
+              date:
+                $ref: '#/components/schemas/Timestamp'
+        sentiment_distribution:
+          type: object
+          additionalProperties:
+            type: number
+            format: float
+            minimum: 0
+            maximum: 100
+
+    SalesSuggestions:
+      type: object
+      required:
+        - next_steps
+        - talking_points
+        - risk_factors
+        - recommended_content
+      properties:
+        next_steps:
+          type: array
+          items:
+            type: string
+        talking_points:
+          type: array
+          items:
+            type: string
+        risk_factors:
+          type: array
+          items:
+            type: string
+        recommended_content:
+          type: array
+          items:
+            type: string
+
+  parameters:
+    CustomerIdParam:
+      name: customer_id
+      in: path
+      required: true
+      schema:
+        $ref: '#/components/schemas/UUID'
+      description: UUID of the customer
+
+    OpportunityIdParam:
+      name: opportunity_id
+      in: path
+      required: true
+      schema:
+        $ref: '#/components/schemas/UUID'
+      description: UUID of the opportunity
+
+    DaysParam:
+      name: days
+      in: query
+      required: false
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 365
+        default: 30
+      description: Number of days to analyze
+
+  responses:
+    NotFound:
+      description: The specified resource was not found
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              detail:
+                type: string
+                example: "Resource not found"
+
+    ServerError:
+      description: Internal server error occurred
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              detail:
+                type: string
+                example: "Internal server error"
+
+  examples:
+    ValidationError:
+      summary: Invalid parameter value
+      value:
+        status: 422
+        body: {
+          "detail": [
+            {
+              "loc": ["query", "days"],
+              "msg": "ensure this value is less than or equal to 365",
+              "type": "value_error.number.not_le"
+            }
+          ]
+        }
+
+    AuthenticationError:
+      summary: Invalid or missing authentication
+      value:
+        status: 401
+        body: {
+          "detail": "Invalid authentication credentials"
+        }
+
+    ServerError:
+      summary: Internal server error
+      value:
+        status: 500
+        body: {
+          "detail": "An unexpected error occurred"
+        }
+
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+paths:
+  /retrieval/conversation-history/{customer_id}:
+    get:
+      summary: Retrieve conversation history
+      description: Get chronological interaction history with sentiment analysis
+      parameters:
+        - $ref: '#/components/parameters/CustomerIdParam'
+        - $ref: '#/components/parameters/DaysParam'
+        - name: interaction_types
+          in: query
+          required: false
+          schema:
+            type: array
+            items:
+              $ref: '#/components/schemas/InteractionType'
+      responses:
+        '200':
+          description: Successful retrieval of conversation history
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ConversationTurn'
+              examples:
+                success:
+                  summary: Successful conversation history retrieval
+                  value: [
+                    {
+                      "speaker": "sales_person",
+                      "content": "I noticed you've been exploring our cloud migration solutions. What specific challenges are you looking to address?",
+                      "timestamp": "2024-02-15T14:30:00Z",
+                      "sentiment": "neutral"
+                    },
+                    {
+                      "speaker": "customer",
+                      "content": "Yes, we're particularly concerned about minimizing downtime during the transition. Our current system handles critical operations.",
+                      "timestamp": "2024-02-15T14:31:00Z",
+                      "sentiment": "negative"
+                    },
+                    {
+                      "speaker": "sales_person",
+                      "content": "I understand your concern about downtime. Let me walk you through our zero-downtime migration approach that we've successfully implemented with similar businesses.",
+                      "timestamp": "2024-02-15T14:32:00Z",
+                      "sentiment": "positive"
+                    }
+                  ]
+        '404':
+          description: Customer not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/responses/NotFound/content/application~1json/schema'
+              example:
+                detail: "Customer not found"
+        '500':
+          $ref: '#/components/responses/ServerError'
+
+  /retrieval/successful-patterns/{industry}:
+    get:
+      summary: Get successful sales patterns
+      description: Identify successful patterns for specific industry
+      parameters:
+        - name: industry
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: min_success_rate
+          in: query
+          required: false
+          schema:
+            type: number
+            format: float
+            minimum: 0
+            maximum: 1
+            default: 0.6
+        - $ref: '#/components/parameters/DaysParam'
+      responses:
+        '200':
+          description: Successful retrieval of sales patterns
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/SalesPattern'
+              examples:
+                success:
+                  summary: Successful patterns for technology industry
+                  value: [
+                    {
+                      "pattern_type": "solution_demonstration",
+                      "frequency": 45,
+                      "avg_success_rate": 0.75,
+                      "example_interactions": [
+                        {
+                          "notes": "Conducted interactive demo focusing on client's specific use case - data migration scenario",
+                          "topics": ["technical", "implementation", "security"],
+                          "sentiment": "positive"
+                        },
+                        {
+                          "notes": "Follow-up demo addressing specific security concerns with compliance team",
+                          "topics": ["security", "compliance", "technical"],
+                          "sentiment": "positive"
+                        }
+                      ]
+                    },
+                    {
+                      "pattern_type": "technical_deep_dive",
+                      "frequency": 38,
+                      "avg_success_rate": 0.82,
+                      "example_interactions": [
+                        {
+                          "notes": "Technical architecture review with client's engineering team",
+                          "topics": ["architecture", "scalability", "integration"],
+                          "sentiment": "positive"
+                        }
+                      ]
+                    }
+                  ]
+        '500':
+          $ref: '#/components/responses/ServerError'
+
+  /retrieval/objection-handling/{objection_type}:
+    get:
+      summary: Get objection handling suggestions
+      description: Retrieve successful responses to common sales objections
+      parameters:
+        - name: objection_type
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Type of objection (e.g., pricing, timeline, technical)
+      responses:
+        '200':
+          description: Successful retrieval of objection handling data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ObjectionResponse'
+              examples:
+                success:
+                  summary: Successful objection handling retrieval
+                  value: {
+                    "objection_type": "pricing",
+                    "successful_responses": [
+                      {
+                        "response": "Let's break down the ROI. Based on your current spending of $X on manual processes, our solution would reduce costs by 40% within the first year.",
+                        "next_steps": "Schedule ROI review meeting with finance team",
+                        "sentiment": "positive"
+                      },
+                      {
+                        "response": "We offer flexible payment terms and can structure the contract to align with your budget cycles.",
+                        "next_steps": "Share payment plan options document",
+                        "sentiment": "positive"
+                      }
+                    ],
+                    "success_rate": 0.78,
+                    "recommended_approach": "Focus on value-based selling with concrete ROI examples"
+                  }
+        '404':
+          description: No data found for objection type
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/responses/NotFound/content/application~1json/schema'
+        '500':
+          $ref: '#/components/responses/ServerError'
+
+  /retrieval/competitor-analysis/{customer_id}:
+    get:
+      summary: Analyze competitor mentions
+      description: Analyze competitor mentions in customer interactions
+      parameters:
+        - $ref: '#/components/parameters/CustomerIdParam'
+        - $ref: '#/components/parameters/DaysParam'
+        - name: min_mentions
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            default: 2
+          description: Minimum mentions threshold
+      responses:
+        '200':
+          description: Successful retrieval of competitor analysis
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/CompetitorMention'
+              examples:
+                success:
+                  summary: Successful competitor analysis
+                  value: [
+                    {
+                      "competitor_name": "CompetitorA",
+                      "mention_count": 5,
+                      "context": [
+                        {
+                          "content": "Client mentioned CompetitorA's pricing is 20% lower but lacks key security features",
+                          "sentiment": "positive",
+                          "date": "2024-02-10T15:20:00Z"
+                        },
+                        {
+                          "content": "Previous experience with CompetitorA's support was unsatisfactory",
+                          "sentiment": "negative",
+                          "date": "2024-01-15T09:45:00Z"
+                        }
+                      ],
+                      "sentiment_distribution": {
+                        "positive": 20.0,
+                        "neutral": 40.0,
+                        "negative": 40.0
+                      }
+                    }
+                  ]
+        '404':
+          description: Customer not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/responses/NotFound/content/application~1json/schema'
+        '500':
+          $ref: '#/components/responses/ServerError'
+
+  /retrieval/sales-suggestions/{opportunity_id}:
+    get:
+      summary: Get sales suggestions
+      description: Get AI-powered sales suggestions based on opportunity context
+      parameters:
+        - $ref: '#/components/parameters/OpportunityIdParam'
+      responses:
+        '200':
+          description: Successful retrieval of sales suggestions
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SalesSuggestions'
+              examples:
+                success:
+                  summary: Successful sales suggestions retrieval
+                  value: {
+                    "next_steps": [
+                      "Schedule technical deep-dive with engineering team",
+                      "Prepare custom ROI analysis based on provided metrics",
+                      "Set up executive sponsor meeting"
+                    ],
+                    "talking_points": [
+                      "Zero-downtime migration approach",
+                      "Enhanced security features vs. CompetitorA",
+                      "Flexible payment terms available"
+                    ],
+                    "risk_factors": [
+                      "Budget approval pending",
+                      "Technical team has concerns about integration timeline",
+                      "CompetitorA offering aggressive pricing"
+                    ],
+                    "recommended_content": [
+                      "Case study: Similar implementation in finance sector",
+                      "Technical architecture whitepaper",
+                      "Security compliance documentation"
+                    ]
+                  }
+        '404':
+          description: Opportunity not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/responses/NotFound/content/application~1json/schema'
+              example:
+                detail: "Opportunity not found"
+        '500':
+          $ref: '#/components/responses/ServerError'
+
+  /retrieval/bulk-analysis:
+    post:
+      summary: Perform bulk analysis
+      responses:
+        '200':
+          description: Successful bulk analysis
+          content:
+            application/json:
+              examples:
+                success:
+                  summary: Successful bulk analysis
+                  value:
+                    request:
+                      url: "/retrieval/bulk-analysis"
+                      method: "POST"
+                      body: {
+                        "customer_ids": [
+                          "123e4567-e89b-12d3-a456-426614174000",
+                          "987fdebc-a45b-12d3-a456-426614174000"
+                        ],
+                        "analysis_types": ["conversation", "competitor"],
+                        "date_range": {
+                          "start": "2024-01-01T00:00:00Z",
+                          "end": "2024-03-01T00:00:00Z"
+                        }
+                      }
+                    response:
+                      status: 200
+                      body: {
+                        "analysis_results": [
+                          {
+                            "customer_id": "123e4567-e89b-12d3-a456-426614174000",
+                            "conversation_analysis": {
+                              "total_interactions": 15,
+                              "sentiment_trend": "improving",
+                              "key_topics": ["pricing", "security", "implementation"]
+                            },
+                            "competitor_analysis": {
+                              "mentions": 8,
+                              "primary_competitor": "CompetitorA",
+                              "sentiment_summary": "mostly_negative"
+                            }
+                          },
+                          {
+                            "customer_id": "987fdebc-a45b-12d3-a456-426614174000",
+                            "conversation_analysis": {
+                              "total_interactions": 12,
+                              "sentiment_trend": "stable",
+                              "key_topics": ["technical", "support", "training"]
+                            },
+                            "competitor_analysis": {
+                              "mentions": 3,
+                              "primary_competitor": "CompetitorB",
+                              "sentiment_summary": "neutral"
+                            }
+                          }
+                        ],
+                        "analysis_summary": {
+                          "processed_customers": 2,
+                          "total_interactions": 27,
+                          "common_topics": ["technical", "pricing"],
+                          "completion_time": "2024-03-10T15:30:00Z"
+                        }
+                      }
+
+security:
+  - BearerAuth: []

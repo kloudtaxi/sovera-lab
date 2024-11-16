@@ -1,0 +1,188 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "definitions": {
+    "person": {
+      "type": "object",
+      "required": ["id", "firstName", "lastName", "email", "phoneNumber", "role", "demographics"],
+      "properties": {
+        "id": { "type": "string", "format": "uuid" },
+        "firstName": { "type": "string" },
+        "lastName": { "type": "string" },
+        "email": { "type": "string", "format": "email" },
+        "phoneNumber": { "type": "string", "pattern": "^\\+[1-9]\\d{1,14}$" },
+        "role": { "type": "string" },
+        "demographics": {
+          "type": "object",
+          "properties": {
+            "nationality": { "type": "string" },
+            "languages": { 
+              "type": "array",
+              "items": { "type": "string" }
+            },
+            "timezone": { "type": "string" },
+            "preferredContactMethod": {
+              "type": "string",
+              "enum": ["email", "phone", "both"]
+            }
+          }
+        }
+      }
+    },
+
+    "customer": {
+      "type": "object",
+      "required": ["id", "company", "contacts", "industry", "size", "status"],
+      "properties": {
+        "id": { "type": "string", "format": "uuid" },
+        "company": { "type": "string" },
+        "contacts": {
+          "type": "array",
+          "items": { "$ref": "#/definitions/person" }
+        },
+        "industry": { "type": "string" },
+        "size": {
+          "type": "string",
+          "enum": ["small", "medium", "enterprise"]
+        },
+        "status": {
+          "type": "string",
+          "enum": ["lead", "prospect", "qualified", "customer", "churned"]
+        },
+        "annualRevenue": { "type": "number" },
+        "employeeCount": { "type": "integer" },
+        "location": {
+          "type": "object",
+          "properties": {
+            "country": { "type": "string" },
+            "city": { "type": "string" },
+            "timezone": { "type": "string" }
+          }
+        }
+      }
+    },
+
+    "salesPerson": {
+      "type": "object",
+      "allOf": [
+        { "$ref": "#/definitions/person" },
+        {
+          "type": "object",
+          "required": ["salesMetrics", "territories", "expertise"],
+          "properties": {
+            "salesMetrics": {
+              "type": "object",
+              "properties": {
+                "quotaAttainment": { "type": "number" },
+                "averageDealSize": { "type": "number" },
+                "winRate": { "type": "number" },
+                "averageSalesCycle": { "type": "number" }
+              }
+            },
+            "territories": {
+              "type": "array",
+              "items": { "type": "string" }
+            },
+            "expertise": {
+              "type": "array",
+              "items": { "type": "string" }
+            }
+          }
+        }
+      ]
+    },
+
+    "product": {
+      "type": "object",
+      "required": ["id", "name", "category", "price"],
+      "properties": {
+        "id": { "type": "string", "format": "uuid" },
+        "name": { "type": "string" },
+        "category": { "type": "string" },
+        "price": { "type": "number" },
+        "description": { "type": "string" },
+        "features": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "customizationOptions": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "discountTiers": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "quantity": { "type": "integer" },
+              "discountPercentage": { "type": "number" }
+            }
+          }
+        }
+      }
+    },
+
+    "interaction": {
+      "type": "object",
+      "required": ["id", "type", "timestamp", "customerId", "salesPersonId"],
+      "properties": {
+        "id": { "type": "string", "format": "uuid" },
+        "type": {
+          "type": "string",
+          "enum": ["call", "email", "meeting", "demo", "proposal"]
+        },
+        "timestamp": { "type": "string", "format": "date-time" },
+        "customerId": { "type": "string", "format": "uuid" },
+        "salesPersonId": { "type": "string", "format": "uuid" },
+        "duration": { "type": "integer" },
+        "outcome": {
+          "type": "string",
+          "enum": ["successful", "followupRequired", "notInterested", "noAnswer"]
+        },
+        "notes": { "type": "string" },
+        "nextSteps": { "type": "string" },
+        "sentiment": {
+          "type": "string",
+          "enum": ["positive", "neutral", "negative"]
+        },
+        "topics": {
+          "type": "array",
+          "items": { "type": "string" }
+        }
+      }
+    },
+
+    "opportunity": {
+      "type": "object",
+      "required": ["id", "customerId", "salesPersonId", "products", "status"],
+      "properties": {
+        "id": { "type": "string", "format": "uuid" },
+        "customerId": { "type": "string", "format": "uuid" },
+        "salesPersonId": { "type": "string", "format": "uuid" },
+        "products": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "productId": { "type": "string", "format": "uuid" },
+              "quantity": { "type": "integer" },
+              "customizations": {
+                "type": "array",
+                "items": { "type": "string" }
+              },
+              "appliedDiscount": { "type": "number" }
+            }
+          }
+        },
+        "status": {
+          "type": "string",
+          "enum": ["identified", "qualified", "proposalSent", "negotiating", "won", "lost"]
+        },
+        "value": { "type": "number" },
+        "probability": { "type": "number" },
+        "expectedCloseDate": { "type": "string", "format": "date" },
+        "lossReason": { "type": "string" },
+        "competitorInvolved": { "type": "string" }
+      }
+    }
+  }
+}
