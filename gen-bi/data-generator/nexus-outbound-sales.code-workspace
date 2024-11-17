@@ -1,0 +1,11 @@
+{
+	"folders": [
+		{
+			"path": "."
+		}
+	],
+	"settings": {
+		"workbench.tree.indent": 12,
+		"workbench.colorTheme": "Sonokai Atlantis"
+	}
+}

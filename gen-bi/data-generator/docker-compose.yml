@@ -4,8 +4,8 @@ services:
     container_name: nexus_sales_rag_db
     environment:
       POSTGRES_DB: sales_rag_db
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     ports:
       - "5432:5432"
     volumes:
